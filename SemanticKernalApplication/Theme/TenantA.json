@@ -1,0 +1,21 @@
+{
+  "themeName": "Dark Mode",
+  "primaryColor": "#ff6600",
+  "secondaryColor": "#0055ff",
+  "backgroundColor": "#121212",
+  "textColor": "#ffffff",
+  "button": {
+    "bgColor": "#ff6600",
+    "textColor": "#ffffff",
+    "hoverBgColor": "#e65c00"
+  },
+  "typography": {
+    "fontFamily": "Inter, sans-serif",
+    "headingFontSize": "2rem",
+    "bodyFontSize": "1rem"
+  },
+  "spacing": {
+    "padding": "16px",
+    "margin": "8px"
+  }
+}
