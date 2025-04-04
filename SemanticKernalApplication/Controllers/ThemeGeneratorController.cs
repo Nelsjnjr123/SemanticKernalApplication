@@ -73,7 +73,7 @@ namespace SemanticKernalApplication.Controllers
             builder.AddAzureOpenAIChatCompletion(
                      "gpt-4o",   // Azure OpenAI Deployment Name
                      endpoint,  // Azure OpenAI Endpoint
-                     key);      // Azure OpenAI Key
+                     key);     
 
             var kernel = builder.Build();
             ChatHistory history = [];
