@@ -25,7 +25,7 @@ namespace SemanticKernalApplication.Controllers
             builder.AddAzureOpenAIChatCompletion(
                      "gpt-4o",   // Azure OpenAI Deployment Name
                      "https://testopenaiforxmc.openai.azure.com/",  // Azure OpenAI Endpoint
-                     "3FL54ElYA2wLKoygrNRvNDUJvQVVvSR7zGVgLpomlHOPGehxGOkRJQQJ99BDACYeBjFXJ3w3AAABACOGsdx7");      // Azure OpenAI Key
+                     "");      // Azure OpenAI Key
 
             return builder.Build();
         }
