@@ -25,7 +25,7 @@ namespace SemanticKernalApplication.Controllers
             builder.AddAzureOpenAIChatCompletion(
                      "gpt-4o",   // Azure OpenAI Deployment Name
                      "https://testopenaiforxmc.openai.azure.com/",  // Azure OpenAI Endpoint
-                     "");      // Azure OpenAI Key
+                     "");     
 
             return builder.Build();
         }
@@ -67,7 +67,7 @@ namespace SemanticKernalApplication.Controllers
 #pragma warning disable SKEXP0001, SKEXP0010
 
             var endpoint = "https://testopenaiforxmc.openai.azure.com/";
-            var key = "3FL54ElYA2wLKoygrNRvNDUJvQVVvSR7zGVgLpomlHOPGehxGOkRJQQJ99BDACYeBjFXJ3w3AAABACOGsdx7";
+            var key = "";
 
             var builder = Kernel.CreateBuilder();
             builder.AddAzureOpenAIChatCompletion(
