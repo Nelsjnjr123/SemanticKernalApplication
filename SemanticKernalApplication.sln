@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SemanticKernalApplication.A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SemanticKernalApplication.ServiceDefaults", "SemanticKernalApplication.ServiceDefaults\SemanticKernalApplication.ServiceDefaults.csproj", "{69339EFD-D6C7-4DB2-B8A2-00FE0DE15FF0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SemanticKernalApplication.Core", "SemanticKernalApplication.Core\SemanticKernalApplication.Core.csproj", "{9A55CDB0-A94B-4AF2-AFD8-16535E18AC74}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SemanticKernalApplication.Services", "SemanticKernalApplication.Services\SemanticKernalApplication.Services.csproj", "{D41569AF-CC0F-473D-BC97-A1BD8E1D40A8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +31,14 @@ Global
 		{69339EFD-D6C7-4DB2-B8A2-00FE0DE15FF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{69339EFD-D6C7-4DB2-B8A2-00FE0DE15FF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{69339EFD-D6C7-4DB2-B8A2-00FE0DE15FF0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A55CDB0-A94B-4AF2-AFD8-16535E18AC74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A55CDB0-A94B-4AF2-AFD8-16535E18AC74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A55CDB0-A94B-4AF2-AFD8-16535E18AC74}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A55CDB0-A94B-4AF2-AFD8-16535E18AC74}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D41569AF-CC0F-473D-BC97-A1BD8E1D40A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D41569AF-CC0F-473D-BC97-A1BD8E1D40A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D41569AF-CC0F-473D-BC97-A1BD8E1D40A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D41569AF-CC0F-473D-BC97-A1BD8E1D40A8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

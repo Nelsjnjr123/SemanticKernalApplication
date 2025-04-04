@@ -1,0 +1,265 @@
+﻿using SemanticKernalApplication.Core;
+using SemanticKernalApplication.Services.Interfaces;
+using SemanticKernalApplication.WebAPI.Helpers;
+using SemanticKernalApplication.WebAPI.Interfaces;
+using SemanticKernalApplication.WebAPI.Models;
+using SemanticKernalApplication.WebAPI.Models.GraphQLResponseModels;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using static SemanticKernalApplication.Core.Constants;
+
+namespace SemanticKernalApplication.WebAPI.Respositories
+{
+    public class LayoutRepository : ILayoutRepository
+    {
+        #region variable        
+        IGraphQLService _graphQLService;
+        private readonly ILogger<LayoutRepository> _logger;
+        private readonly IModelMapperService _modelMapper;
+        private readonly IBaseScreenMappingService _baseScreenMapping;
+        private readonly ICacheService _cacheService;
+        private readonly IPersonalizationRepository _personalizationRepository;
+        private readonly IOptions<SemanticKernalApplicationSettings> _options;
+
+        //private readonly IAlgoliaService _algoliaService;
+        #endregion
+
+        #region constructor
+        public LayoutRepository(IGraphQLService graphQLService, ILogger<LayoutRepository> logger,
+            IModelMapperService modelMapper, IBaseScreenMappingService baseScreenMapping,
+            ICacheService cacheService, IPersonalizationRepository personalizationRepository, IOptions<SemanticKernalApplicationSettings> options
+           )
+        {
+            _graphQLService = graphQLService;
+            _logger = logger;
+            _modelMapper = modelMapper;
+            _baseScreenMapping = baseScreenMapping;
+            _cacheService = cacheService;
+            _personalizationRepository = personalizationRepository;
+            _options = options;
+           
+        }
+        #endregion
+
+        #region public method(s)
+        /// <summary>
+        /// Getting the page components and process it
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public async Task<object> GetPageComponents(RequestModel model)
+        {
+            _logger.LogInformation("========LayoutRepository.GetPageComponents =======: screenName:" + model?.ScreenName + " \r\n" + JsonSerializer.Serialize(model));
+            string pageName = String.Empty;
+            string headerVariant = String.Empty;
+            bool isServices = false;
+            BaseAppResponse response = new BaseAppResponse
+            {
+                SectionComponents = new List<object>()
+            };
+            BuildModelParameter buildModelParameter = new BuildModelParameter();
+            string cacheKey = String.Empty;
+            string serialzedfilter = String.Empty;
+            try
+            {
+                if (model?.Filters != null)
+                {
+                    if (model?.Filters != null && model?.Filters?.Any() == true)
+                    {
+                        serialzedfilter = JsonSerializer.Serialize(model?.Filters);
+                    }
+                }
+                #region token generation
+               
+                #endregion
+                var results = await CreateAndGetAllTaskResults(model, serialzedfilter);
+              
+              //  var contextItemHeading = results.sitecoreLayoutModel.FieldData?.ToObject<HeadingContentModel>();
+               // string title = !String.IsNullOrWhiteSpace(contextItemHeading?.Heading?.Value) ? contextItemHeading?.Heading?.Value : contextItemHeading?.Title?.Value;
+                pageName = !String.IsNullOrWhiteSpace("") ? "" : String.Empty;
+                var mainPlaceholders = results.sitecoreLayoutModel?.PlaceholderData;
+                var mobileMainPlaceholders = results.sitecoreLayoutModel?.MobilePlaceholderData;
+                var mobilePlaceholderComponents = new JArray();
+                List<PlaceholderComponents> mobileSitecoreComponents = new List<PlaceholderComponents>();
+                if (mobileMainPlaceholders != null)
+                {
+                    mobilePlaceholderComponents = JArray.FromObject(mobileMainPlaceholders);
+                    mobileSitecoreComponents = mobilePlaceholderComponents?.ToObject<List<PlaceholderComponents>>();
+                }
+                var placeholderComponents = new JArray();
+
+                List<PlaceholderComponents> sitecoreComponents = new List<PlaceholderComponents>();
+                if (mainPlaceholders != null)
+                {
+                    placeholderComponents = JArray.FromObject(mainPlaceholders);
+                    sitecoreComponents = placeholderComponents?.ToObject<List<PlaceholderComponents>>();
+
+
+                    switch (model.ScreenName.ToLower())
+                    {
+                        case Constants.ScreenName.SettingsPageScreen:
+                            await _baseScreenMapping.GetSettingsScreenComponents(sitecoreComponents, response);
+                            break;
+                        case Constants.ScreenName.HomePageScreen:
+                            await _baseScreenMapping.GetHomeScreenComponents(sitecoreComponents, response, model, results.sitecoreLayoutModel.FieldData, buildModelParameter);
+                            break;
+                        
+                    }
+
+                }
+                else
+                    _logger.LogInformation($"======== LayoutRepository.GetPageComponents =======:screenName: {model?.ScreenName} id: {model?.Id} No Placeholder found for this page");
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error in LayoutRepository.GetPageComponents. Message: {ex.Message}", ex);
+            }
+            if (_options.Value.CDPSettings.EnableCDP && !String.IsNullOrEmpty(model?.BrowserId) &&
+                (!String.IsNullOrEmpty(model.ScreenName) && !model.ScreenName.Equals(Constants.ScreenName.OnboardingPageScreen, StringComparison.InvariantCultureIgnoreCase)))
+            {
+
+                //Fire and forget
+                _ = TriggerViewEventAsync(model, !String.IsNullOrEmpty(pageName) ? pageName : model?.ScreenName, isServices);
+            }
+            return response;
+        }
+
+        #endregion
+
+        #region private method(s)
+        /// <summary>
+        /// Triggering view event
+        /// </summary>
+        /// <param name="model"></param>
+        /// <param name="pageName"></param>
+        /// <param name="isServices">Whatson / experience(Art, dine , news podcast etc)</param>
+        /// <returns></returns>
+        private async Task TriggerViewEventAsync(RequestModel model, string pageName, bool isServices = false)
+        {
+
+            //Adding page view event
+            CDPBase personalizationModel = new CDPBase()
+            {
+                BrowserId = model?.BrowserId,
+                Channel = _options.Value?.CDPSettings.Channel,
+                Currency = _options.Value?.CDPSettings.Currency,
+                Language = _options.Value?.CDPSettings.Language,
+                Page = pageName ?? model?.ScreenName,
+                Pos = _options.Value?.CDPSettings.Pos,
+                Type = Core.Constants.PageViewEvent,
+                SessionData = new CDP_Session()
+                {
+                    Deep_link = model?.Id,
+                    Is_logged_in = !String.IsNullOrEmpty(model?.SfId) ? true : false,
+                    PageType = model?.PageType != null ? model?.PageType?.ToUpper() : String.Empty,
+                    Type = model?.Type != null ? model?.Type?.ToUpper() : string.Empty,
+                    OriginPage = model?.OriginPage,
+                    Guest_Type = model?.Personna != null ? model?.Personna?.ToUpper() : String.Empty,
+                    Filters = model?.Filters?.Count > 0 ? model?.Filters : null,
+                    ScreenName = model?.ScreenName,
+                    PageId = model?.Id,
+                    PageTitle = pageName
+
+                }
+            };
+            //Add the Services Types(whatson /Experience)
+            if (isServices)
+            {
+                var extension = new CDPBaseExtensions()
+                {
+                    Type = model?.Type?.ToUpper(),
+                    PageId = model?.Id,
+                    PageTitle = pageName,
+                    ScreenName = model?.ScreenName,
+                    PageType = model?.PageType?.ToUpper(),
+                    Country = model.State
+                    // Place = rootObject.address.state,
+                };
+                personalizationModel.Ext = extension;
+            }
+            else
+            {
+                var extension = new CDPBaseExtensions()
+                {
+                    Type = model?.Type?.ToUpper(),
+                    PageId = model?.Id,
+                    PageTitle = pageName,
+                    ScreenName = model?.ScreenName,
+                    Country = model.State
+                    //Place = rootObject.address.state,
+                };
+                personalizationModel.Ext = extension;
+            }
+            await _personalizationRepository.TriggerEventAsync(personalizationModel, model?.BrowserId);
+        }
+
+        async Task<(SitecoreLayoutModel sitecoreLayoutModel, BuildModelParameter buildModelParameter, string cacheKey)> CreateAndGetAllTaskResults(RequestModel model, String Serialzedfilter)
+        {
+            BuildModelParameter buildModelParameter = new BuildModelParameter();
+            string cacheKey = String.Empty;
+            List<Task<object>> tasks = new List<Task<object>>();
+            bool isFromCache = false;
+            var requestArray = new[] { "GetSitecoreLayoutComponents", model?.Language, model?.Id, model?.PageType, model?.ScreenName, model?.Personna, model?.Type };
+            string personnaLayoutBasedCacheKey = $"{string.Join("_", requestArray.Where(s => !string.IsNullOrEmpty(s)))?.ToLowerInvariant()}";
+            var nonRequestArray = new[] { "GetSitecoreLayoutComponents", model?.Language, model?.Id, model?.PageType, model?.ScreenName, model?.Type };
+            string nonPersonnaBasedCacheKey = $"{string.Join("_", nonRequestArray.Where(s => !string.IsNullOrEmpty(s)))?.ToLowerInvariant()}";
+
+            if (model != null && !string.IsNullOrEmpty(model.ScreenName))
+            {
+                //cacheKey = model.ScreenName.ToLower() switch
+                //{
+                //    ScreenName.HomePageScreen or ScreenName.ServiceLandingScreen or ScreenName.VehicalDetailsLandingPage or ScreenName.CarWashLandingPageScreen => personnaLayoutBasedCacheKey,
+                //    _ => nonPersonnaBasedCacheKey,
+                //};
+            }
+            SitecoreLayoutModel sitecoreLayoutModel = new SitecoreLayoutModel
+            {
+               
+            };
+           
+            //Getting the layout cache details of sitecore layout/item query
+            if (_cacheService.TryGetValue(cacheKey, out SitecoreLayoutModel cachedSitecoreLayoutModel)
+               && cachedSitecoreLayoutModel?.PlaceholderData != null)
+            {
+                isFromCache = true;
+                sitecoreLayoutModel = cachedSitecoreLayoutModel;
+               
+            }
+            else
+            {
+
+                tasks.Add(_modelMapper.GetSitecoreLayoutComponents(model, false));
+            }
+           
+            try
+            {
+                await Task.WhenAll(tasks);
+                //Fetch record from the Sitecore/Edge using GraphQL              
+                foreach (var item in tasks)
+                {
+                    if (item.Result is SitecoreLayoutModel)
+                    {
+                        sitecoreLayoutModel = (SitecoreLayoutModel)item.Result;
+
+                    }
+
+                }
+            }
+            catch (AggregateException allExceptions)
+            {
+                foreach (var ex in allExceptions.Flatten().InnerExceptions)
+                {
+                    _logger.LogError($"Error occur from method CreateAndGetAllTaskResults ==Error :{ex.Message} == {ex.StackTrace}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error occur from method CreateAndGetAllTaskResults ==Error :{ex.Message} == {ex.StackTrace}");
+            }
+            return (sitecoreLayoutModel, buildModelParameter, cacheKey);
+        }
+        #endregion
+    }
+}

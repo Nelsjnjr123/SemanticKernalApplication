@@ -17,6 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SemanticKernalApplication.Core\SemanticKernalApplication.Core.csproj" />
+    <ProjectReference Include="..\SemanticKernalApplication.Services\SemanticKernalApplication.Services.csproj" />
     <ProjectReference Include="..\SemanticKernalApplication.ServiceDefaults\SemanticKernalApplication.ServiceDefaults.csproj" />
   </ItemGroup>
 
