@@ -273,6 +273,20 @@ namespace SemanticKernalApplication.Controllers
             return list;
         }
 
+        [Route("GetSiteTheme")]
+        public async Task<IActionResult> GetSiteTheme()
+        {
+            string path = Path.Combine(Directory.GetCurrentDirectory(), @"Theme\mock.json");
+
+            var jsonContent = System.IO.File.ReadAllText(path);
+            // Deserialize into an object
+            var jsonData = JsonConvert.DeserializeObject(jsonContent);
+
+            // Serialize without indentation (compact JSON)
+            var compactJson = JsonConvert.SerializeObject(jsonData, Formatting.None);
+
+            return Ok(compactJson);
+        }
 
     }
 }
