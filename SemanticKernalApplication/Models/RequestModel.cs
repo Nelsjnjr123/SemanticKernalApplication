@@ -9,6 +9,7 @@ namespace SemanticKernalApplication.WebAPI.Models
       
         [Required]
         public string ScreenName { get; set; }
+        public string SiteName { get; set; }
 
         [Required]
         public string DeviceId { get; set; }
@@ -19,12 +20,8 @@ namespace SemanticKernalApplication.WebAPI.Models
         public string Language { get; set; } = "en";  
 
         public string BrowserId { get; set; }
-        public string OriginPage { get; set; }
        
-        public string Email { get; set; }
-        
-        public string sitename { get; set; }
-
+   
     }
    
 }

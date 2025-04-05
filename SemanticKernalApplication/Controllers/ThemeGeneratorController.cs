@@ -14,6 +14,7 @@ using SemanticKernalApplication.WebAPI.Controllers;
 using SemanticKernalApplication.WebAPI.Interfaces;
 using SemanticKernalApplication.WebAPI.Models;
 using SemanticKernalApplication.WebAPI.Respositories;
+using static SemanticKernalApplication.Core.Constants;
 
 namespace SemanticKernalApplication.Controllers
 {
@@ -27,12 +28,13 @@ namespace SemanticKernalApplication.Controllers
         private readonly IBaseScreenMappingService _baseScreenMapping;
         private readonly ICacheService _cacheService;
         private readonly IOptions<SemanticKernalApplicationSettings> _options;
+        private readonly IAPIWrapper _wrapper;
         Kernel _kernel;
         #endregion
         #region constructor
         public ThemeGeneratorController(IGraphQLService graphQLService, ILogger<LayoutRepository> logger,
             IModelMapperService modelMapper, IBaseScreenMappingService baseScreenMapping,
-            ICacheService cacheService, IOptions<SemanticKernalApplicationSettings> options)
+            ICacheService cacheService, IOptions<SemanticKernalApplicationSettings> options,IAPIWrapper wrapper)
         {
             _graphQLService = graphQLService;
             _logger = logger;
@@ -40,6 +42,7 @@ namespace SemanticKernalApplication.Controllers
             _baseScreenMapping = baseScreenMapping;
             _cacheService = cacheService;
             _options = options;
+            _wrapper = wrapper;
         }
         #endregion
         #region property
@@ -104,11 +107,16 @@ namespace SemanticKernalApplication.Controllers
 
                 ChatHistory history = new ChatHistory();
                 string input = "Generate a flutter app theme in json format, which will be used to generate the dynamic theme based on the json properties. The json file should contain the following properties: primary color, secondary color, background color, text color, button default state color, button hover state color, typography font name, typography heading size, typography body text size, spacing padding size and spacing margin size. The json file should be in a valid format and should not contain any additional information or comments.";
-                string path = Path.Combine(Directory.GetCurrentDirectory(), @"Theme\TenantC.json");
+                var siteTheming = GetSiteSettings(model.SiteName, model.Brand);
+                string globalThemePath = siteTheming.GlobalTheme;
+                var globalThemeData = System.IO.File.ReadAllLines(globalThemePath).ToList();
+                globalThemeData.ForEach(line => input += line);
+                string globalTheme = string.Join("", globalThemeData);
 
-                var fileData = System.IO.File.ReadAllLines(path).ToList();
-                fileData.ForEach(line => input += line);
-                string themedata = string.Join("", fileData);
+                string siteThemePath = siteTheming.SiteTheme;
+                var siteThemeData = System.IO.File.ReadAllLines(siteThemePath).ToList();
+                siteThemeData.ForEach(line => input += line);
+                string siteTheme = string.Join("", siteThemeData);
 
                 history.AddSystemMessage("You are theme generator and always mandatory for you to generate the 4 theme array structure.");
                 string prompt = $$"""
@@ -124,9 +132,11 @@ namespace SemanticKernalApplication.Controllers
                 var result = await kernel.InvokePromptAsync(prompt, new(executionSettings));
 
                 string fullMessage = result.ToString();
-                var mainTheme = JsonConvert.DeserializeObject<ThemeUpdated>(themedata);
+                var mainTheme = JsonConvert.DeserializeObject<ThemeUpdated>(globalTheme);
+                var currentSiteTheme = JsonConvert.DeserializeObject<ThemeUpdated>(siteTheme);
+
                 _cacheService.Set(mainThemecacheKey, mainTheme);
-                var themeList = ProcessAITheme(fullMessage, mainTheme, model.Brand);
+                var themeList = ProcessAITheme(fullMessage, mainTheme, model.Brand, currentSiteTheme);
                 _cacheService.Set(cacheKey, themeList);
 
                 return Ok(JsonConvert.SerializeObject(themeList));
@@ -165,13 +175,10 @@ namespace SemanticKernalApplication.Controllers
             var mainThemerequestArray = new[] { "MainTheme", model?.Brand, model?.Language, model?.DeviceId };
             string mainThemecacheKey = $"{string.Join("_", mainThemerequestArray.Where(s => !string.IsNullOrEmpty(s)))?.ToLowerInvariant()}";
 
-            string path = Path.Combine(Directory.GetCurrentDirectory(), @"Theme\TenantB.json");
             var executionSettings = new AzureOpenAIPromptExecutionSettings
             {
                 ResponseFormat = typeof(ThemeUpdated)
             };
-            var fileData = System.IO.File.ReadAllLines(path).ToList();
-            string themedata = string.Join("", fileData);
 
             if (model != null && !string.IsNullOrEmpty(model.ThemeId))
             {
@@ -180,7 +187,7 @@ namespace SemanticKernalApplication.Controllers
                     cachedTheme.templates.Count > 0)
                 {
                     var userTheme = cachedTheme.templates.Find(p => p.TemplateId == model.ThemeId);
-                    if (userTheme.Equals(default(ThemeUpdated)))
+                    if (!userTheme.Equals(default(ThemeUpdated)))
                     {
                         ChatHistory history = new ChatHistory();
                         string input = JsonConvert.SerializeObject(userTheme);
@@ -197,11 +204,13 @@ namespace SemanticKernalApplication.Controllers
                         string fullMessage = result.ToString();
                         if (_cacheService.TryGetValue(mainThemecacheKey, out ThemeUpdated cachedMainTheme))
                         {
-                            themeList = ProcessAITheme(fullMessage, cachedMainTheme, model.Brand, true);
+                            ThemeUpdated siteTheme = new ThemeUpdated();
+                            themeList = ProcessAITheme(fullMessage, cachedMainTheme, model.Brand, siteTheme, true);
                             _cacheService.Set(cacheKey, themeList);
                         }
                     }
                 }
+
             }
             return themeList;
         }
@@ -241,7 +250,7 @@ namespace SemanticKernalApplication.Controllers
         /// <param name="brandname"></param>
         /// <param name="isUserPrompt"></param>
         /// <returns></returns>
-        private ThemesList ProcessAITheme(string aiGeneratedContent, ThemeUpdated maintheme, string brandname, bool isUserPrompt = false)
+        private ThemesList ProcessAITheme(string aiGeneratedContent, ThemeUpdated maintheme, string brandname,ThemeUpdated SiteTheme, bool isUserPrompt = false)
         {
             string output = "";
             JObject jsonObject = JObject.FromObject(maintheme);
@@ -288,13 +297,29 @@ namespace SemanticKernalApplication.Controllers
             }
             ThemesList themesList = new ThemesList()
             {
-                mainTheme = maintheme,
+                mainTheme = !SiteTheme.Equals(default(ThemeUpdated))? SiteTheme:maintheme,
                 templates = data
             };
 
             return themesList;
+        }        
+        private SiteLevelSettings GetSiteSettings(string siteName, string brand)
+        {
+            string cacheKey = $"Sitesettings_{siteName}_{brand}";
+            SiteLevelSettings siteLevelSettings = new SiteLevelSettings();
+            //await _wrapper.PostAsync<>();
+            if (_cacheService.TryGetValue(cacheKey, out SiteLevelSettings cachedSiteLevelSettings) && cachedSiteLevelSettings !=null)                  
+            {
+                return cachedSiteLevelSettings;
+            }
+            else
+            {
+                //TODO fetch the site level settings from the cms
+                _cacheService.Set(cacheKey, siteLevelSettings);
+            }
+            return siteLevelSettings;
         }
-
+       
         #endregion
 
     }
