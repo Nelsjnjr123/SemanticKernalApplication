@@ -22,7 +22,9 @@ namespace SemanticKernalApplication.WebAPI.Models
         public string OriginPage { get; set; }
        
         public string Email { get; set; }
-   
+        
+        public string sitename { get; set; }
+
     }
    
 }

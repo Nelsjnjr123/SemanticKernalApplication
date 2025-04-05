@@ -27,7 +27,7 @@ namespace SemanticKernalApplication.Services
             {
                 if (_environment == Constants.DevelopmentEnvironment)
                 {
-                    SitecoreApIKey = (bool)_options?.Value?.EnableKeyVault ? _configuration[_options.Value.SitecoreGraphQLSettings.SitecoreApIKey_Development] : _options.Value.SitecoreGraphQLSettings.SitecoreApIKey_Development;
+                    SitecoreApIKey = (bool)_options?.Value?.EnableKeyVault ? _configuration[_options.Value.SitecoreGraphQLSettings.SitecoreApIKey_Development] : _options.Value.SitecoreGraphQLSettings.SitecoreApIKey;
                 }
                 else if (_environment == Constants.UATEnvironment)
                     SitecoreApIKey = (bool)_options?.Value?.EnableKeyVault ? _configuration[_options.Value.SitecoreGraphQLSettings.SitecoreApIKey_UAT] : _options.Value.SitecoreGraphQLSettings.SitecoreApIKey_UAT;
@@ -35,7 +35,7 @@ namespace SemanticKernalApplication.Services
                     SitecoreApIKey = (bool)_options?.Value?.EnableKeyVault ? _configuration[_options.Value.SitecoreGraphQLSettings.SitecoreApIKey] : _options.Value.SitecoreGraphQLSettings.SitecoreApIKey;
             }
             else
-                SitecoreApIKey = _options?.Value?.SitecoreGraphQLSettings.SitecoreApIKey_Override;
+                SitecoreApIKey = _options.Value.SitecoreGraphQLSettings.SitecoreApIKey;
             return new GraphQLHttpRequestWithHeaders
             {
                 Query = query,
