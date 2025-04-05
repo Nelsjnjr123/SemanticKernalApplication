@@ -116,7 +116,7 @@ namespace SemanticKernalApplication.WebAPI.Respositories
                             settings.Add(settingsModel);
                         }
 
-                        var textFields = results.sitecoreLayoutModel.FieldData.ToArray().Where(x => (string)x["name"] == "System Input" || (string)x["name"] == "User Input" || (string)x["name"] == "Seasonal Input").ToList();
+                        var textFields = results.sitecoreLayoutModel.FieldData.ToArray().Where(x => (string)x["name"] == "System Input" || (string)x["name"] == "User Input" || (string)x["name"] == "Seasonal Input" || (string)x["name"] == "Persona Input").ToList();
                         foreach (var item in textFields)
                         {
                             SettingsModel settingsModel = new SettingsModel();

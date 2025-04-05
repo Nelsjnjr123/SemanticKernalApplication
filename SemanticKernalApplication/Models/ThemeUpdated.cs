@@ -187,10 +187,19 @@ namespace SemanticKernalApplication.Models
 
         [JsonPropertyName("themes_dark_onSurface")]
         public string themes_dark_onSurface { get; set; }
+        [JsonPropertyName("brand_typography_button_color")]
+        public string brand_typography_button_color { get; set; }
+        [JsonPropertyName("brand_typography_title_color")]
+        public string brand_typography_title_color { get; set; }
     }
 
     public class ThemeAIResponseTemplate
     {
+        
+        [JsonPropertyName("brand_typography_button_color")]
+        public string brand_typography_button_color { get; set; }
+        [JsonPropertyName("brand_typography_title_color")]
+        public string brand_typography_title_color { get; set; }
         [JsonPropertyName("themes_dark_primary")]
         public string themes_dark_primary { get; set; }
 
