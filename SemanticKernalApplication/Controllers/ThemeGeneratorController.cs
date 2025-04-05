@@ -13,6 +13,7 @@ using Newtonsoft.Json;
 using SemanticKernalApplication.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json.Linq;
+using System.Net.Http.Json;
 
 namespace SemanticKernalApplication.Controllers
 {
@@ -148,10 +149,10 @@ namespace SemanticKernalApplication.Controllers
                 Console.Write(content);
                 fullMessage += content;
             }
-            return Ok(ProcessAITheme(fullMessage,null));
+            return Ok(ProcessAITheme(fullMessage, null));
         }
 
-        private ThemeModelData ProcessAITheme(string aiGeneratedContent,ThemeModel maintheme)
+        private ThemeModelData ProcessAITheme(string aiGeneratedContent, ThemeModel maintheme)
         {
             string target1 = "```json";
             aiGeneratedContent = aiGeneratedContent.Substring(aiGeneratedContent.IndexOf(target1));
@@ -172,10 +173,10 @@ namespace SemanticKernalApplication.Controllers
             joinedTheme = joinedTheme.Replace("```", null);
             joinedTheme = joinedTheme.TrimStart(',').TrimEnd(',');
             string output = "";
-            if (joinedTheme.IndexOf("[")>0)
+            if (joinedTheme.IndexOf("[") > 0)
             {
                 output = "{\"data\":" + joinedTheme + "}";
-                
+
 
             }
             else
@@ -183,13 +184,13 @@ namespace SemanticKernalApplication.Controllers
                 output = "{\"data\":[" + joinedTheme + "]}";
             }
 
-       
-            var aithemeList= JsonConvert.DeserializeObject<ThemeModelData>(output);
+
+            var aithemeList = JsonConvert.DeserializeObject<ThemeModelData>(output);
 
             JObject jsonObject = JObject.FromObject(maintheme);
             var themeList = new List<ThemeModel>();
 
-            List<JObject> list = new List<JObject>();   
+            List<JObject> list = new List<JObject>();
 
 
             foreach (var item in aithemeList.data)
@@ -206,6 +207,20 @@ namespace SemanticKernalApplication.Controllers
             return null;
         }
 
+        [Route("GetSiteTheme")]
+        public async Task<IActionResult> GetSiteTheme()
+        {
+            string path = Path.Combine(Directory.GetCurrentDirectory(), @"Theme\mock.json");
+
+            var jsonContent = System.IO.File.ReadAllText(path);
+            // Deserialize into an object
+            var jsonData = JsonConvert.DeserializeObject(jsonContent);
+
+            // Serialize without indentation (compact JSON)
+            var compactJson = JsonConvert.SerializeObject(jsonData, Formatting.None);
+
+            return Ok(compactJson);
+        }
 
     }
 }
