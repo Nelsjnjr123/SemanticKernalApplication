@@ -12,6 +12,8 @@ namespace SemanticKernalApplication.Models
     {
         [JsonProperty("brand")]
         public Brand Brand { get; set; }
+        [JsonProperty("themeid")]
+        public string ThemeId { get; set; }
 
         [JsonProperty("themes")]
         public Themes Themes { get; set; }

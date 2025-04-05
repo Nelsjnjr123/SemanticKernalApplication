@@ -28,16 +28,13 @@ namespace SemanticKernalApplication.Services.Services
         #region public methods
         public bool TryGetValue<TItem>(string key, out TItem value)
         {
-            if (!_options.Value.APICacheSetting.EnableAPICache)
-            {
-                _logger.LogInformation($"===== CacheService: Caching is disabled============");
-                value = default;
-                return false;
-            }
+            
             if (!string.IsNullOrWhiteSpace(key))
             {
-                if (_memoryCache.TryGetValue(key, out object result))
+                 
+                if (_memoryCache.TryGetValue(key, out object  result))
                 {
+                     
                     _logger.LogInformation($"===== CacheService: Getting data from Cache for cacheKey:{key} ============");
                     if (result == null)
                     {
@@ -50,6 +47,9 @@ namespace SemanticKernalApplication.Services.Services
                         value = item;
                         return true;
                     }
+                   
+                   
+
                 }
             }
             value = default;

@@ -50,61 +50,7 @@ namespace SemanticKernalApplication.WebAPI.Controllers
             try
             {
            
-                //Parking subscription is only available for the employee alone
-                if (model != null && !String.IsNullOrEmpty(model.ScreenName) &&
-                 model.ScreenName.Equals(Constants.ScreenName.ParkingSubscriptionLandindPageScreen, StringComparison.InvariantCultureIgnoreCase) &&
-                 !String.IsNullOrEmpty(model.Personna) && !model.Personna.Equals(Constants.EMPLOYEE, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    return GetResponse<AppComponents>(new ApiResponseModel<AppComponents>()
-                    {
-                        Errors = new List<ApiResponseErrorModel>(),
-                        IsSuccess = false,
-                        Data = new AppComponents(),
-                        StatusCode = System.Net.HttpStatusCode.BadRequest,
-                        Message = Constants.HttpStatusCode400
-                    });
-                }
-                //Validate for Payment history screen
-                else if (model != null && !String.IsNullOrEmpty(model.ScreenName) &&
-                 model.ScreenName.Equals(Constants.ScreenName.PaymentHistoryPageScreen, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    StringBuilder sb = new StringBuilder();
-                    if (String.IsNullOrEmpty(model.SfId))
-                    {
-                        sb.Append($"{nameof(model.SfId)}  {Core.Constants.Required} {Environment.NewLine}");
-                    }
-                    if (!String.IsNullOrEmpty(sb.ToString()))
-                        return GetResponse<AppComponents>(new ApiResponseModel<AppComponents>()
-                        {
-                            Errors = new List<ApiResponseErrorModel>(),
-                            IsSuccess = false,
-                            Data = new AppComponents(),
-                            StatusCode = System.Net.HttpStatusCode.BadRequest,
-                            Message = sb.ToString()
-                        });
-
-                }
-                else if (model != null && !String.IsNullOrEmpty(model.ScreenName) &&
-                (model.ScreenName.Equals(Constants.ScreenName.HomePageScreen, StringComparison.InvariantCultureIgnoreCase) ||
-                model.ScreenName.Equals(Constants.ScreenName.CarWashLandingPageScreen, StringComparison.InvariantCultureIgnoreCase) ||
-                model.ScreenName.Equals(Constants.ScreenName.VehicalDetailsLandingPage, StringComparison.InvariantCultureIgnoreCase) ||
-                model.ScreenName.Equals(Constants.ScreenName.ServiceLandingScreen, StringComparison.InvariantCultureIgnoreCase)))
-                {
-                    StringBuilder sb = new StringBuilder();
-                    if (String.IsNullOrEmpty(model.Personna))
-                    {
-                        sb.Append($"{nameof(model.Personna)}  {Core.Constants.Required} {Environment.NewLine}");
-                    }
-                    if (!String.IsNullOrEmpty(sb.ToString()))
-                        return GetResponse<AppComponents>(new ApiResponseModel<AppComponents>()
-                        {
-                            Errors = new List<ApiResponseErrorModel>(),
-                            IsSuccess = false,
-                            Data = new AppComponents(),
-                            StatusCode = System.Net.HttpStatusCode.BadRequest,
-                            Message = sb.ToString()
-                        });
-                }
+                
                 var results = await _layoutRepository.GetPageComponents(model);
                 BaseAppResponse baseAppResponse = (BaseAppResponse)results;
                 if (baseAppResponse != null && baseAppResponse.SectionComponents.Count > 0)

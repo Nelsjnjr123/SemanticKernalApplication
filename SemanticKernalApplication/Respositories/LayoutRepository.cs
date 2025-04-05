@@ -63,16 +63,7 @@ namespace SemanticKernalApplication.WebAPI.Respositories
             string serialzedfilter = String.Empty;
             try
             {
-                if (model?.Filters != null)
-                {
-                    if (model?.Filters != null && model?.Filters?.Any() == true)
-                    {
-                        serialzedfilter = JsonSerializer.Serialize(model?.Filters);
-                    }
-                }
-                #region token generation
-               
-                #endregion
+          
                 var results = await CreateAndGetAllTaskResults(model, serialzedfilter);
               
               //  var contextItemHeading = results.sitecoreLayoutModel.FieldData?.ToObject<HeadingContentModel>();
@@ -152,12 +143,7 @@ namespace SemanticKernalApplication.WebAPI.Respositories
                 SessionData = new CDP_Session()
                 {
                     Deep_link = model?.Id,
-                    Is_logged_in = !String.IsNullOrEmpty(model?.SfId) ? true : false,
-                    PageType = model?.PageType != null ? model?.PageType?.ToUpper() : String.Empty,
-                    Type = model?.Type != null ? model?.Type?.ToUpper() : string.Empty,
-                    OriginPage = model?.OriginPage,
-                    Guest_Type = model?.Personna != null ? model?.Personna?.ToUpper() : String.Empty,
-                    Filters = model?.Filters?.Count > 0 ? model?.Filters : null,
+                    
                     ScreenName = model?.ScreenName,
                     PageId = model?.Id,
                     PageTitle = pageName
@@ -169,13 +155,11 @@ namespace SemanticKernalApplication.WebAPI.Respositories
             {
                 var extension = new CDPBaseExtensions()
                 {
-                    Type = model?.Type?.ToUpper(),
+                 
                     PageId = model?.Id,
                     PageTitle = pageName,
-                    ScreenName = model?.ScreenName,
-                    PageType = model?.PageType?.ToUpper(),
-                    Country = model.State
-                    // Place = rootObject.address.state,
+                    ScreenName = model?.ScreenName
+                 
                 };
                 personalizationModel.Ext = extension;
             }
@@ -183,12 +167,11 @@ namespace SemanticKernalApplication.WebAPI.Respositories
             {
                 var extension = new CDPBaseExtensions()
                 {
-                    Type = model?.Type?.ToUpper(),
+                    
                     PageId = model?.Id,
                     PageTitle = pageName,
                     ScreenName = model?.ScreenName,
-                    Country = model.State
-                    //Place = rootObject.address.state,
+                  
                 };
                 personalizationModel.Ext = extension;
             }
@@ -201,9 +184,9 @@ namespace SemanticKernalApplication.WebAPI.Respositories
             string cacheKey = String.Empty;
             List<Task<object>> tasks = new List<Task<object>>();
             bool isFromCache = false;
-            var requestArray = new[] { "GetSitecoreLayoutComponents", model?.Language, model?.Id, model?.PageType, model?.ScreenName, model?.Personna, model?.Type };
+            var requestArray = new[] { "GetSitecoreLayoutComponents", model?.Language, model?.Id,  model?.ScreenName,  };
             string personnaLayoutBasedCacheKey = $"{string.Join("_", requestArray.Where(s => !string.IsNullOrEmpty(s)))?.ToLowerInvariant()}";
-            var nonRequestArray = new[] { "GetSitecoreLayoutComponents", model?.Language, model?.Id, model?.PageType, model?.ScreenName, model?.Type };
+            var nonRequestArray = new[] { "GetSitecoreLayoutComponents", model?.Language, model?.Id,  model?.ScreenName };
             string nonPersonnaBasedCacheKey = $"{string.Join("_", nonRequestArray.Where(s => !string.IsNullOrEmpty(s)))?.ToLowerInvariant()}";
 
             if (model != null && !string.IsNullOrEmpty(model.ScreenName))
