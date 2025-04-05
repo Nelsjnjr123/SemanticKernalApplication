@@ -22,8 +22,4 @@
     <ProjectReference Include="..\SemanticKernalApplication.ServiceDefaults\SemanticKernalApplication.ServiceDefaults.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Theme\" />
-  </ItemGroup>
-
 </Project>
