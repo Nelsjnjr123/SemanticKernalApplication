@@ -39,7 +39,9 @@ namespace SemanticKernalApplication.Controllers
             var kernel = GetKernel();
             ChatHistory history = [];
             string input = "Generate a flutter app theme in json format, which will be used to generate the dynamic theme based on the json properties,The json file should contain the following properties: primary color, secondary color, background color, text color, button default state color, button hover state color, typography font name, typography heading size, typography body text size, spacing padding size and spacing margin size. The json file should be in a valid format and should not contain any additional information or comments.";
-            var fileData = System.IO.File.ReadAllLines("C:\\Users\\HP\\source\\repos\\SemanticKernalApplication\\SemanticKernalApplication\\Theme\\TenantB.json")
+            string path = Path.Combine(Directory.GetCurrentDirectory(), @"Theme\TenantB.json");
+
+            var fileData = System.IO.File.ReadAllLines(path)
                            .ToList();
             fileData.ForEach(line => input += line);
             string themedata = "";
