@@ -1,32 +1,19 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
-using System.ComponentModel;
-
-using Microsoft.SemanticKernel.Connectors.OpenAI;
-using Microsoft.SemanticKernel.Embeddings;
-using Microsoft.SemanticKernel.TextToImage;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
-using RestSharp;
-using Newtonsoft.Json;
-using SemanticKernalApplication.Models;
 using Microsoft.Extensions.Caching.Memory;
-using Newtonsoft.Json.Linq;
-using SemanticKernalApplication.WebAPI.Models.GraphQLResponseModels;
-using SemanticKernalApplication.WebAPI.Models;
-using SemanticKernalApplication.WebAPI.Controllers;
-using System.Net;
-using System.Text;
 using Microsoft.Extensions.Options;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using SemanticKernalApplication.Core;
+using SemanticKernalApplication.Models;
 using SemanticKernalApplication.Services.Interfaces;
+using SemanticKernalApplication.WebAPI.Controllers;
 using SemanticKernalApplication.WebAPI.Interfaces;
+using SemanticKernalApplication.WebAPI.Models;
 using SemanticKernalApplication.WebAPI.Respositories;
-using SemanticKernalApplication.Services.Services;
-using SemanticKernalApplication.Services;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using System.Text.Json.Nodes;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SemanticKernalApplication.Controllers
 {
@@ -39,8 +26,6 @@ namespace SemanticKernalApplication.Controllers
         private readonly IBaseScreenMappingService _baseScreenMapping;
         private readonly ICacheService _cacheService;
         private readonly IOptions<SemanticKernalApplicationSettings> _options;
-
-        //private readonly IAlgoliaService _algoliaService;
         #endregion
         public ThemeGeneratorController(IGraphQLService graphQLService, ILogger<LayoutRepository> logger,
             IModelMapperService modelMapper, IBaseScreenMappingService baseScreenMapping,
@@ -66,7 +51,11 @@ namespace SemanticKernalApplication.Controllers
 
             return builder.Build();
         }
-
+        /// <summary>
+        /// Generate the theme based on the user prompt or default theme
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
         [Route("ThemeGenerator")]
         [HttpPost]
         public async Task<IActionResult> GetTheme([FromBody] RequestModel model)
@@ -127,7 +116,12 @@ namespace SemanticKernalApplication.Controllers
             }
 
         }
-        [NonAction]
+        /// <summary>
+        /// Provide the theme based on the user prompt and update the theme with the user requested changes
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [NonAction]        
         public async Task<List<JObject>> GetThemeFromUserPromptAsync(RequestModel model)
         {
 #pragma warning disable SKEXP0001, SKEXP0010
@@ -198,66 +192,43 @@ namespace SemanticKernalApplication.Controllers
                 return null;
             }
         }
-
+        /// <summary>
+        /// Process the AI generated theme and merge it with the main theme to provide theme list
+        /// </summary>
+        /// <param name="aiGeneratedContent"></param>
+        /// <param name="maintheme"></param>
+        /// <param name="brandname"></param>
+        /// <param name="isUserPrompt"></param>
+        /// <returns></returns>
         private List<JObject> ProcessAITheme(string aiGeneratedContent, ThemeUpdated maintheme, string brandname, bool isUserPrompt = false)
         {
-            string target1 = "```json";
-            // aiGeneratedContent = aiGeneratedContent.Substring(aiGeneratedContent.IndexOf(target1));
-            //string lineToRemovePrefix = "###";
-
-            //// Split the string into lines
-            //string[] lines = aiGeneratedContent.Split(new[] { "\n", "\r\n" }, StringSplitOptions.None);
-
-            //// Filter out the lines that start with the specified prefix
-            //string[] filteredLines = lines
-            //    .Where(line => !line.TrimStart().StartsWith(lineToRemovePrefix))
-            //    .ToArray();
-
-            //// Join the remaining lines back into a single string
-            //string result = string.Join(Environment.NewLine, filteredLines);
-            //var splitedTheme = result.Split(target1).ToList();
-            // var joinedTheme = string.Join(",", splitedTheme);
-            var joinedTheme = aiGeneratedContent.Replace("```", null);
-            joinedTheme = joinedTheme.TrimStart(',').TrimEnd(',');
             string output = "";
-            //if (joinedTheme.IndexOf("[") > 0)
-            //{
-            //    output = "{\"data\":" + joinedTheme + "}";
-
-
-            //}
-            //else
-            //{
-            //    output = "{\"data\":[" + joinedTheme + "]}";
-            //}
+            JObject jsonObject = JObject.FromObject(maintheme);
+            var themeList = new List<ThemeUpdated>();
+            List<JObject> list = new List<JObject>();
             ThemesList aithemeList = new();
+            List<ThemeUpdated> data = new List<ThemeUpdated>();
+            int i = 0;
             if (!isUserPrompt)
+            {
                 aithemeList = JsonConvert.DeserializeObject<ThemesList>(aiGeneratedContent);
+              
+                data = aithemeList.templates.Select(obj =>
+                {
+                    obj.TemplateId = i.ToString();
+                    obj.brand_name = brandname;
+                    i++;
+                    return obj;
+                }).ToList();
+            }
             else
             {
-                aithemeList.templates= new List<ThemeUpdated>() { JsonConvert.DeserializeObject<ThemeUpdated>(aiGeneratedContent) };
+                aithemeList.templates = new List<ThemeUpdated>() { JsonConvert.DeserializeObject<ThemeUpdated>(aiGeneratedContent) };            
+               
             }
 
-            JObject jsonObject = JObject.FromObject(maintheme);
-            //JObject jsonObject2 = JObject.FromObject(maintheme);
-            //JObject jsonObject3 = JObject.FromObject(maintheme);
-            //JObject jsonObject4 = JObject.FromObject(maintheme);          
-            var themeList = new List<ThemeUpdated>();
-
-            List<JObject> list = new List<JObject>();
-
-
-            int i = 0;
-            var data = aithemeList.templates.Select(obj =>
-            {
-                obj.TemplateId = i.ToString();
-                obj.brand_name = brandname;
-                i++;
-                return obj;
-            }).ToList();
-            var ddd = new ThemesList() { templates = data };
-            //aithemeList.templates.ForEach(p => p.TemplateId = i++);
-            foreach (ThemeUpdated item in ddd.templates)
+            var GeneratedThemes = new ThemesList() { templates = data };            
+            foreach (ThemeUpdated item in GeneratedThemes.templates)
             {
                 JObject siteTheme = JObject.FromObject(item);
 
@@ -268,7 +239,7 @@ namespace SemanticKernalApplication.Controllers
                 });
                 list.Add(jsonObject);
                 jsonObject = JObject.FromObject(maintheme);
-                i++;
+              
             }
             return list;
         }
