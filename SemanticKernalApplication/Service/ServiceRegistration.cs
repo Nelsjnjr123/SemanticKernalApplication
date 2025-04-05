@@ -39,9 +39,11 @@ namespace SemanticKernalApplication.WebAPI.Service
 
       services.AddTransient<IGraphQLRequestBuilder, GraphQLRequestBuilder>();
       services.AddScoped<IAPIWrapper, APIWrapper>();
-    
-    
+
+            services.AddTransient<IHooksRepository, HooksRepository>();
+
+
+        }
     }
-  }
 }
 
