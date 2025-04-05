@@ -1,6 +1,13 @@
-@SemanticKernalApplication_HostAddress = http://localhost:5237
+@SemanticKernalApplication_HostAddress = https://localhost:7026
 
-GET {{SemanticKernalApplication_HostAddress}}/weatherforecast/
+POST {{SemanticKernalApplication_HostAddress}}/themegenerator
 Accept: application/json
-
+{
+    "Brand": "HIBrand",
+    "DeviceId": "37.785834",
+    "UserPrompt": "",
+    "ThemeId": "",
+    "ScreenName":"",
+    "SiteName":"mav-site-a"
+}
 ###

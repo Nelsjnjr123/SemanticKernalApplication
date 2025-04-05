@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -31,13 +32,16 @@ namespace SemanticKernalApplication.Controllers
         private readonly ICacheService _cacheService;
         private readonly IOptions<SemanticKernalApplicationSettings> _options;
         private readonly IAPIWrapper _wrapper;
-        Kernel _kernel;
+        private  Kernel _kernel;
+        private HybridCache _cache;
+       
         #endregion
         #region constructor
         public ThemeGeneratorController(IGraphQLService graphQLService, ILogger<LayoutRepository> logger,
             IModelMapperService modelMapper, IBaseScreenMappingService baseScreenMapping,
-            ICacheService cacheService, IOptions<SemanticKernalApplicationSettings> options, IAPIWrapper wrapper, ILayoutRepository layoutRepository)
+            ICacheService cacheService, IOptions<SemanticKernalApplicationSettings> options, IAPIWrapper wrapper, ILayoutRepository layoutRepository, HybridCache cache)
         {
+            _cache = cache;
             _layoutRepository = layoutRepository;
             _graphQLService = graphQLService;
             _logger = logger;
@@ -49,6 +53,7 @@ namespace SemanticKernalApplication.Controllers
         }
         #endregion
         #region property
+
         /// <summary>
         /// Getting the Semantic Kernel object
         /// </summary>
@@ -110,47 +115,21 @@ namespace SemanticKernalApplication.Controllers
                 };
 
                 ChatHistory history = new ChatHistory();
-
                 var siteTheming = await GetSiteSettingsAsync(model.SiteName, model.Brand, model.DeviceId);
                 string input = siteTheming.UserInput;
                 string globalThemePath = siteTheming.GlobalTheme;
-                var sss = @globalThemePath;
-                var sss1 = globalThemePath;
-
-                using HttpClient client = new HttpClient();
-                string content = await client.GetStringAsync(globalThemePath);
-                string[] lines = content.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
-                List<string> globalThemeData = new List<string>();
-                foreach (var line in lines)
-                {
-                    globalThemeData.Add(line);
-                }
-                globalThemeData.ForEach(line => input += line);
-                string globalTheme = string.Join("", globalThemeData);
-
-                string siteThemePath = siteTheming.SiteTheme;
-
-
-                using HttpClient client1 = new HttpClient();
-                string content1 = await client1.GetStringAsync(siteThemePath);
-                string[] lines1 = content1.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
-                List<string> siteThemeData = new List<string>();
-                foreach (var line in lines)
-                {
-                    siteThemeData.Add(line);
-                }
-
-                siteThemeData.ForEach(line => input += line);
-                string siteTheme = string.Join("", siteThemeData);
-                string prompt = siteTheming.SystemInput.Replace("{input}", input);
+               
+               
+                var themes = await GetThemeFromSitecore(siteTheming, input, globalThemePath);
+                string prompt = siteTheming.SystemInput.Replace("{input}", themes.globalTheme);
                 history.AddSystemMessage(siteTheming.PersonaInput);
                 history.AddUserMessage(prompt);
                 var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
                 var result = await kernel.InvokePromptAsync(prompt, new(executionSettings));
 
                 string fullMessage = result.ToString();
-                var mainTheme = JsonConvert.DeserializeObject<ThemeUpdated>(globalTheme);
-                var currentSiteTheme = JsonConvert.DeserializeObject<ThemeUpdated>(siteTheme);
+                var mainTheme = JsonConvert.DeserializeObject<ThemeUpdated>(themes.globalTheme);
+                var currentSiteTheme = JsonConvert.DeserializeObject<ThemeUpdated>(themes.siteTheme);
 
                 _cacheService.Set(mainThemecacheKey, mainTheme);
                 var themeList = ProcessAITheme(fullMessage, mainTheme, model.Brand, currentSiteTheme);
@@ -160,6 +139,7 @@ namespace SemanticKernalApplication.Controllers
             }
         }
 
+     
         [Route("GetSiteTheme")]
         public async Task<IActionResult> GetSiteThemeAsync()
         {
@@ -310,6 +290,13 @@ namespace SemanticKernalApplication.Controllers
 
             return themesList;
         }
+        /// <summary>
+        /// Get all the setting for the site from the CMS
+        /// </summary>
+        /// <param name="siteName"></param>
+        /// <param name="brand"></param>
+        /// <param name="deviceId"></param>
+        /// <returns></returns>
         private async Task<SiteLevelSettings> GetSiteSettingsAsync(string siteName, string brand, string deviceId)
         {
             string cacheKey = $"Sitesettings_{siteName}_{brand}";
@@ -365,6 +352,42 @@ namespace SemanticKernalApplication.Controllers
                 _cacheService.Set(cacheKey, siteLevelSettings);
             }
             return siteLevelSettings;
+        }
+        /// <summary>
+        /// Fetching the themes from the sitecore media library url (GQL)
+        /// </summary>
+        /// <param name="siteTheming"></param>
+        /// <param name="input"></param>
+        /// <param name="globalThemePath"></param>
+        /// <returns></returns>
+        private async Task<(string globalTheme, string siteTheme)> GetThemeFromSitecore(SiteLevelSettings siteTheming, string input, string globalThemePath)
+        {
+            string globalTheme = String.Empty;
+            string siteTheme = String.Empty;
+            HttpClient client = new HttpClient();
+            string content = await client.GetStringAsync(globalThemePath);
+            string[] lines = content.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+            List<string> globalThemeData = new List<string>();
+            foreach (var line in lines)
+            {
+                globalThemeData.Add(line);
+            }
+            globalThemeData.ForEach(line => input += line);
+            globalTheme = string.Join("", globalThemeData);
+            string siteThemePath = siteTheming.SiteTheme;
+            client = new HttpClient();
+            content = await client.GetStringAsync(siteThemePath);
+            string[] lines1 = content.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+            List<string> siteThemeData = new List<string>();
+            foreach (var line in lines)
+            {
+                siteThemeData.Add(line);
+            }
+
+            siteThemeData.ForEach(line => input += line);
+            siteTheme = string.Join("", siteThemeData);
+            await Task.CompletedTask;
+            return (globalTheme, siteTheme);
         }
 
         #endregion

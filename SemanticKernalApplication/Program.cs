@@ -12,6 +12,7 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddMemoryCache();
+builder.Services.AddHybridCache();
 builder.Services.Configure<SemanticKernalApplicationSettings>(builder.Configuration.GetSection(SemanticKernalApplicationSettings.Key));
 ServiceRegistration.ConfigureServices(builder.Services);
 
