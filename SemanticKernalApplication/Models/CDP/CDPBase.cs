@@ -138,7 +138,7 @@ public class CDP_Session
 
     public string Guest_Type { get; set; }
 
-    public List<FilterOptions> Filters { get; set; }
+   
 
     public string ScreenName { get; set; }
     public string CourseName { get; set; }

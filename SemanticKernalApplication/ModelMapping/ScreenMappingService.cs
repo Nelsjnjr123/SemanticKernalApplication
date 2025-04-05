@@ -120,17 +120,14 @@ namespace SemanticKernalApplication.WebAPI.ModelMapping
         {
             string[] requestArray = null;
             string filters = string.Empty;
-            if (model?.Filters?.Any() == true)
-                filters = JsonSerializer.Serialize(model.Filters);
-
+          
             if (model == null)
                 requestArray = new[] { $"BuildModel_{typeof(T).Name}", requestMethodName };
             else
             {
                 //ignoring latlong for cache key, this will mostly needed in terms location based content changes
                 requestArray = new[] { $"BuildModel_{typeof(T).Name}", requestMethodName, model.Language,
-                model?.Id, model?.ScreenName, model?.PageType, model?.Type, model?.SortOrder,
-                filters, model?.SortBy, model?.PageSize.ToString(), model.PageNumber.ToString(),component?.DataSource, isSfidRequired ? model.SfId : string.Empty };
+                model?.ScreenName, component?.DataSource };
             }
             string cacheKey = string.Join("_", requestArray.Where(s => !string.IsNullOrEmpty(s)))?.ToLowerInvariant();
             if (_cacheService.TryGetValue(cacheKey, out T cacheResponse) && cacheResponse != null)

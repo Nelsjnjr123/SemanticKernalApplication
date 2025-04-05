@@ -64,16 +64,7 @@ namespace SemanticKernalApplication.WebAPI.Respositories
             string serialzedfilter = String.Empty;
             try
             {
-                if (model?.Filters != null)
-                {
-                    if (model?.Filters != null && model?.Filters?.Any() == true)
-                    {
-                        serialzedfilter = JsonSerializer.Serialize(model?.Filters);
-                    }
-                }
-                #region token generation
-
-                #endregion
+          
                 var results = await CreateAndGetAllTaskResults(model, serialzedfilter);
 
                 //  var contextItemHeading = results.sitecoreLayoutModel.FieldData?.ToObject<HeadingContentModel>();
@@ -153,7 +144,7 @@ namespace SemanticKernalApplication.WebAPI.Respositories
 
                         response.SectionComponents.Add(settings);
                     }
-                    _logger.LogInformation($"======== LayoutRepository.GetPageComponents =======:screenName: {model?.ScreenName} id: {model?.Id} No Placeholder found for this page");
+                    _logger.LogInformation($"======== LayoutRepository.GetPageComponents =======:screenName: {model?.ScreenName} No Placeholder found for this page");
                 }
 
 
@@ -197,15 +188,9 @@ namespace SemanticKernalApplication.WebAPI.Respositories
                 Type = Core.Constants.PageViewEvent,
                 SessionData = new CDP_Session()
                 {
-                    Deep_link = model?.Id,
-                    Is_logged_in = !String.IsNullOrEmpty(model?.SfId) ? true : false,
-                    PageType = model?.PageType != null ? model?.PageType?.ToUpper() : String.Empty,
-                    Type = model?.Type != null ? model?.Type?.ToUpper() : string.Empty,
-                    OriginPage = model?.OriginPage,
-                    Guest_Type = model?.Personna != null ? model?.Personna?.ToUpper() : String.Empty,
-                    Filters = model?.Filters?.Count > 0 ? model?.Filters : null,
-                    ScreenName = model?.ScreenName,
-                    PageId = model?.Id,
+                    
+                    
+                    ScreenName = model?.ScreenName,                  
                     PageTitle = pageName
 
                 }
@@ -215,26 +200,22 @@ namespace SemanticKernalApplication.WebAPI.Respositories
             {
                 var extension = new CDPBaseExtensions()
                 {
-                    Type = model?.Type?.ToUpper(),
-                    PageId = model?.Id,
+                 
+                  
                     PageTitle = pageName,
-                    ScreenName = model?.ScreenName,
-                    PageType = model?.PageType?.ToUpper(),
-                    Country = model.State
-                    // Place = rootObject.address.state,
+                    ScreenName = model?.ScreenName
+                 
                 };
                 personalizationModel.Ext = extension;
             }
             else
             {
                 var extension = new CDPBaseExtensions()
-                {
-                    Type = model?.Type?.ToUpper(),
-                    PageId = model?.Id,
+                {                    
+                
                     PageTitle = pageName,
                     ScreenName = model?.ScreenName,
-                    Country = model.State
-                    //Place = rootObject.address.state,
+                  
                 };
                 personalizationModel.Ext = extension;
             }
@@ -247,24 +228,12 @@ namespace SemanticKernalApplication.WebAPI.Respositories
             string cacheKey = String.Empty;
             List<Task<object>> tasks = new List<Task<object>>();
             bool isFromCache = false;
-            var requestArray = new[] { "GetSitecoreLayoutComponents", model?.Language, model?.Id, model?.PageType, model?.ScreenName, model?.Personna, model?.Type };
+            var requestArray = new[] { "GetSitecoreLayoutComponents", model?.Language,   model?.ScreenName,  };
             string personnaLayoutBasedCacheKey = $"{string.Join("_", requestArray.Where(s => !string.IsNullOrEmpty(s)))?.ToLowerInvariant()}";
-            var nonRequestArray = new[] { "GetSitecoreLayoutComponents", model?.Language, model?.Id, model?.PageType, model?.ScreenName, model?.Type };
+            var nonRequestArray = new[] { "GetSitecoreLayoutComponents", model?.Language,   model?.ScreenName };
             string nonPersonnaBasedCacheKey = $"{string.Join("_", nonRequestArray.Where(s => !string.IsNullOrEmpty(s)))?.ToLowerInvariant()}";
 
-            if (model != null && !string.IsNullOrEmpty(model.ScreenName))
-            {
-                //cacheKey = model.ScreenName.ToLower() switch
-                //{
-                //    ScreenName.HomePageScreen or ScreenName.ServiceLandingScreen or ScreenName.VehicalDetailsLandingPage or ScreenName.CarWashLandingPageScreen => personnaLayoutBasedCacheKey,
-                //    _ => nonPersonnaBasedCacheKey,
-                //};
-            }
-            SitecoreLayoutModel sitecoreLayoutModel = new SitecoreLayoutModel
-            {
-
-            };
-
+            SitecoreLayoutModel sitecoreLayoutModel = new SitecoreLayoutModel();
             //Getting the layout cache details of sitecore layout/item query
             if (_cacheService.TryGetValue(cacheKey, out SitecoreLayoutModel cachedSitecoreLayoutModel)
                && cachedSitecoreLayoutModel?.PlaceholderData != null)
