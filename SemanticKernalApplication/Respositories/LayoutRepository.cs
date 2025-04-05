@@ -100,7 +100,7 @@ namespace SemanticKernalApplication.WebAPI.Respositories
 
                 }
                 else
-                    _logger.LogInformation($"======== LayoutRepository.GetPageComponents =======:screenName: {model?.ScreenName} id: {model?.Id} No Placeholder found for this page");
+                    _logger.LogInformation($"======== LayoutRepository.GetPageComponents =======:screenName: {model?.ScreenName}  No Placeholder found for this page");
 
             }
             catch (Exception ex)
@@ -142,10 +142,9 @@ namespace SemanticKernalApplication.WebAPI.Respositories
                 Type = Core.Constants.PageViewEvent,
                 SessionData = new CDP_Session()
                 {
-                    Deep_link = model?.Id,
                     
-                    ScreenName = model?.ScreenName,
-                    PageId = model?.Id,
+                    
+                    ScreenName = model?.ScreenName,                  
                     PageTitle = pageName
 
                 }
@@ -156,7 +155,7 @@ namespace SemanticKernalApplication.WebAPI.Respositories
                 var extension = new CDPBaseExtensions()
                 {
                  
-                    PageId = model?.Id,
+                  
                     PageTitle = pageName,
                     ScreenName = model?.ScreenName
                  
@@ -166,9 +165,8 @@ namespace SemanticKernalApplication.WebAPI.Respositories
             else
             {
                 var extension = new CDPBaseExtensions()
-                {
-                    
-                    PageId = model?.Id,
+                {                    
+                
                     PageTitle = pageName,
                     ScreenName = model?.ScreenName,
                   
@@ -184,24 +182,12 @@ namespace SemanticKernalApplication.WebAPI.Respositories
             string cacheKey = String.Empty;
             List<Task<object>> tasks = new List<Task<object>>();
             bool isFromCache = false;
-            var requestArray = new[] { "GetSitecoreLayoutComponents", model?.Language, model?.Id,  model?.ScreenName,  };
+            var requestArray = new[] { "GetSitecoreLayoutComponents", model?.Language,   model?.ScreenName,  };
             string personnaLayoutBasedCacheKey = $"{string.Join("_", requestArray.Where(s => !string.IsNullOrEmpty(s)))?.ToLowerInvariant()}";
-            var nonRequestArray = new[] { "GetSitecoreLayoutComponents", model?.Language, model?.Id,  model?.ScreenName };
+            var nonRequestArray = new[] { "GetSitecoreLayoutComponents", model?.Language,   model?.ScreenName };
             string nonPersonnaBasedCacheKey = $"{string.Join("_", nonRequestArray.Where(s => !string.IsNullOrEmpty(s)))?.ToLowerInvariant()}";
 
-            if (model != null && !string.IsNullOrEmpty(model.ScreenName))
-            {
-                //cacheKey = model.ScreenName.ToLower() switch
-                //{
-                //    ScreenName.HomePageScreen or ScreenName.ServiceLandingScreen or ScreenName.VehicalDetailsLandingPage or ScreenName.CarWashLandingPageScreen => personnaLayoutBasedCacheKey,
-                //    _ => nonPersonnaBasedCacheKey,
-                //};
-            }
-            SitecoreLayoutModel sitecoreLayoutModel = new SitecoreLayoutModel
-            {
-               
-            };
-           
+            SitecoreLayoutModel sitecoreLayoutModel = new SitecoreLayoutModel();
             //Getting the layout cache details of sitecore layout/item query
             if (_cacheService.TryGetValue(cacheKey, out SitecoreLayoutModel cachedSitecoreLayoutModel)
                && cachedSitecoreLayoutModel?.PlaceholderData != null)

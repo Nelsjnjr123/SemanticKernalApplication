@@ -37,7 +37,7 @@ namespace SemanticKernalApplication.WebAPI.ModelMapping
             ICacheService cacheService,
             ILogger<ModelMapperService> logger,  IAPIWrapper wrapper, IConfiguration configuration)
         {
-            wayFinderUrl = options.Value.WayFinderSettings.WayFinderURL;
+           
             _graphQLService = graphQLService;
            
             _cacheService = cacheService;
@@ -166,7 +166,7 @@ namespace SemanticKernalApplication.WebAPI.ModelMapping
             StringBuilder sb = new StringBuilder();
             string[] requestArray = null;
             requestArray = new[] { $"BuildModel_{typeof(T).Name}",  model?.Language,
-                    model?.Id, model?.ScreenName,component?.DataSource };
+                   model?.ScreenName,component?.DataSource };
             string cacheKey = string.Join("_", requestArray.Where(s => !string.IsNullOrEmpty(s)))?.ToLowerInvariant();
             bool userInsideSemanticKernalApplication = false;
             try
