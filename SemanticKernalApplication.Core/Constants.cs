@@ -211,7 +211,7 @@
         public const string ItemPageUrlXPath = "item.rendered.sitecore.context.MetaDataInfo.canonicalUrl";
 
         public const string IHSiteName = "InnovationHub";
-        public const string SiteName = "ExperienceWebsite";
+        public const string SiteName = "mav-site-a";
 
         public static class ScreenName
         {
