@@ -65,7 +65,7 @@ namespace SemanticKernalApplication.WebAPI.ModelMapping
             {
                 graphQLQueryVariable = new GraphQLQueryVariable()
                 {
-                    sitename = model.sitename ?? SiteName,
+                    sitename = model.SiteName ?? SiteName,
                     language = model.Language
                 };
             }
@@ -79,7 +79,7 @@ namespace SemanticKernalApplication.WebAPI.ModelMapping
 
                     case ScreenName.SettingsPageScreen:
                         graphQuery = Constants.GraphQlQueries.GetSettingItem;
-                        itemPath = string.Format(SETTINGS_PATH, model.sitename ?? SiteName);
+                        itemPath = string.Format(SETTINGS_PATH, model.SiteName ?? SiteName);
                         break;
 
                     case ScreenName.SeasonsPageScreen:
@@ -99,7 +99,7 @@ namespace SemanticKernalApplication.WebAPI.ModelMapping
             
             graphQLQueryVariable = new GraphQLQueryVariable()
             {
-                sitename = model.sitename ?? SiteName,
+                sitename = model.SiteName ?? SiteName,
                 language = model.Language
             };
             graphQLQueryVariable.path = itemPath;

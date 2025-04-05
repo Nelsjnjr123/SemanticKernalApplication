@@ -14,6 +14,7 @@ using SemanticKernalApplication.WebAPI.Controllers;
 using SemanticKernalApplication.WebAPI.Interfaces;
 using SemanticKernalApplication.WebAPI.Models;
 using SemanticKernalApplication.WebAPI.Respositories;
+using System;
 using static SemanticKernalApplication.Core.Constants;
 
 namespace SemanticKernalApplication.Controllers
@@ -25,6 +26,7 @@ namespace SemanticKernalApplication.Controllers
         IGraphQLService _graphQLService;
         private readonly ILogger<LayoutRepository> _logger;
         private readonly IModelMapperService _modelMapper;
+        private readonly ILayoutRepository _layoutRepository;
         private readonly IBaseScreenMappingService _baseScreenMapping;
         private readonly ICacheService _cacheService;
         private readonly IOptions<SemanticKernalApplicationSettings> _options;
@@ -34,8 +36,9 @@ namespace SemanticKernalApplication.Controllers
         #region constructor
         public ThemeGeneratorController(IGraphQLService graphQLService, ILogger<LayoutRepository> logger,
             IModelMapperService modelMapper, IBaseScreenMappingService baseScreenMapping,
-            ICacheService cacheService, IOptions<SemanticKernalApplicationSettings> options,IAPIWrapper wrapper)
+            ICacheService cacheService, IOptions<SemanticKernalApplicationSettings> options, IAPIWrapper wrapper, ILayoutRepository layoutRepository)
         {
+            _layoutRepository = layoutRepository;
             _graphQLService = graphQLService;
             _logger = logger;
             _modelMapper = modelMapper;
@@ -83,7 +86,8 @@ namespace SemanticKernalApplication.Controllers
         [HttpPost]
         public async Task<IActionResult> GetThemeAsync([FromBody] RequestModel model)
         {
-            if (!string.IsNullOrEmpty(model.UserPrompt) && string.IsNullOrEmpty(model.ScreenName))
+
+            if (!string.IsNullOrWhiteSpace(model.UserPrompt) && string.IsNullOrWhiteSpace(model.ScreenName))
             {
                 var result = await GetThemeFromUserPromptAsync(model);
                 return Ok(JsonConvert.SerializeObject(result));
@@ -106,27 +110,40 @@ namespace SemanticKernalApplication.Controllers
                 };
 
                 ChatHistory history = new ChatHistory();
-                string input = "Generate a flutter app theme in json format, which will be used to generate the dynamic theme based on the json properties. The json file should contain the following properties: primary color, secondary color, background color, text color, button default state color, button hover state color, typography font name, typography heading size, typography body text size, spacing padding size and spacing margin size. The json file should be in a valid format and should not contain any additional information or comments.";
-                var siteTheming = GetSiteSettings(model.SiteName, model.Brand);
+
+                var siteTheming = await GetSiteSettingsAsync(model.SiteName, model.Brand, model.DeviceId);
+                string input = siteTheming.UserInput;
                 string globalThemePath = siteTheming.GlobalTheme;
-                var globalThemeData = System.IO.File.ReadAllLines(globalThemePath).ToList();
+                var sss = @globalThemePath;
+                var sss1 = globalThemePath;
+
+                using HttpClient client = new HttpClient();
+                string content = await client.GetStringAsync(globalThemePath);
+                string[] lines = content.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                List<string> globalThemeData = new List<string>();
+                foreach (var line in lines)
+                {
+                    globalThemeData.Add(line);
+                }
                 globalThemeData.ForEach(line => input += line);
                 string globalTheme = string.Join("", globalThemeData);
 
                 string siteThemePath = siteTheming.SiteTheme;
-                var siteThemeData = System.IO.File.ReadAllLines(siteThemePath).ToList();
+
+
+                using HttpClient client1 = new HttpClient();
+                string content1 = await client1.GetStringAsync(siteThemePath);
+                string[] lines1 = content1.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                List<string> siteThemeData = new List<string>();
+                foreach (var line in lines)
+                {
+                    siteThemeData.Add(line);
+                }
+
                 siteThemeData.ForEach(line => input += line);
                 string siteTheme = string.Join("", siteThemeData);
-
-                history.AddSystemMessage("You are theme generator and always mandatory for you to generate the 4 theme array structure.");
-                string prompt = $$"""
-                    Input Theme start: "{{input}}" Input Theme end.
-                    Provide the theme based on the input theme provided and follow guidelines provided and suggest similar theme that will be useful for the brand sites, use the above json theme content as the base theme which is used by the tenant and provide suggestion.
-                    Also specifically target the font color only.
-                    Provide only the modified json properties with the same hierarchical structure (parent child relationship should match input) in the response targeted the font color only in same input theme format and structure.
-                    Don't provide any other information apart from json structure, generate the 4 theme array structure.
-                """;
-
+                string prompt = siteTheming.SystemInput.Replace("{input}", input);
+                history.AddSystemMessage(siteTheming.PersonaInput);
                 history.AddUserMessage(prompt);
                 var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
                 var result = await kernel.InvokePromptAsync(prompt, new(executionSettings));
@@ -179,7 +196,7 @@ namespace SemanticKernalApplication.Controllers
             {
                 ResponseFormat = typeof(ThemeUpdated)
             };
-
+            var siteTheming = await GetSiteSettingsAsync(model.SiteName, model.Brand, model.DeviceId);
             if (model != null && !string.IsNullOrEmpty(model.ThemeId))
             {
                 if (_cacheService.TryGetValue(cacheKey, out ThemesList cachedTheme) &&
@@ -191,12 +208,7 @@ namespace SemanticKernalApplication.Controllers
                     {
                         ChatHistory history = new ChatHistory();
                         string input = JsonConvert.SerializeObject(userTheme);
-
-                        string prompt = $$"""
-                            You are a theme editor and you will receive the theme as input and just update the user requested changes in the provided theme.
-                            User input theme: {{input}} and send me only the modified json properties with the same hierarchical structure (parent-child relationship should match input) in the response.
-                            {{model.UserPrompt}}
-                        """;
+                        string prompt = siteTheming.UserInput.Replace("{input}",input).Replace("{UserPrompt}",model.UserPrompt);
                         history.AddUserMessage(prompt);
                         var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
                         var result = await kernel.InvokePromptAsync(prompt, new(executionSettings));
@@ -222,14 +234,9 @@ namespace SemanticKernalApplication.Controllers
 
         private async Task<IActionResult> GetFlashImageBasedOnEventsAsync(RequestModel model)
         {
+            var siteTheming = await GetSiteSettingsAsync(model.SiteName, model.Brand, model.DeviceId);
             var dallE = kernel.GetRequiredService<ITextToImageService>();
-            string prompt = $$"""
-
-                     You are the image generator, based on the user input generate the single .gif flash image, instead of a collage.
-                    
-                     user input:{{model.UserPrompt}}
-                    generate image with animated.gif extension
-                    """;
+            string prompt = siteTheming.SeasonalInput.Replace("{UserPrompt}", model.UserPrompt);
 
             var executionSettings = new OpenAIPromptExecutionSettings
             {
@@ -250,7 +257,7 @@ namespace SemanticKernalApplication.Controllers
         /// <param name="brandname"></param>
         /// <param name="isUserPrompt"></param>
         /// <returns></returns>
-        private ThemesList ProcessAITheme(string aiGeneratedContent, ThemeUpdated maintheme, string brandname,ThemeUpdated SiteTheme, bool isUserPrompt = false)
+        private ThemesList ProcessAITheme(string aiGeneratedContent, ThemeUpdated maintheme, string brandname, ThemeUpdated SiteTheme, bool isUserPrompt = false)
         {
             string output = "";
             JObject jsonObject = JObject.FromObject(maintheme);
@@ -297,18 +304,58 @@ namespace SemanticKernalApplication.Controllers
             }
             ThemesList themesList = new ThemesList()
             {
-                mainTheme = !SiteTheme.Equals(default(ThemeUpdated))? SiteTheme:maintheme,
+                mainTheme = !SiteTheme.Equals(default(ThemeUpdated)) ? SiteTheme : maintheme,
                 templates = data
             };
 
             return themesList;
-        }        
-        private SiteLevelSettings GetSiteSettings(string siteName, string brand)
+        }
+        private async Task<SiteLevelSettings> GetSiteSettingsAsync(string siteName, string brand, string deviceId)
         {
             string cacheKey = $"Sitesettings_{siteName}_{brand}";
             SiteLevelSettings siteLevelSettings = new SiteLevelSettings();
-            //await _wrapper.PostAsync<>();
-            if (_cacheService.TryGetValue(cacheKey, out SiteLevelSettings cachedSiteLevelSettings) && cachedSiteLevelSettings !=null)                  
+            RequestModel model = new RequestModel() { Brand = brand, SiteName = siteName, ScreenName = ScreenName.SettingsPageScreen, DeviceId = deviceId };
+            BaseAppResponse settings = await _layoutRepository.GetPageComponents(model) as BaseAppResponse;
+            List<SettingsModel> settingsList = new List<SettingsModel>();
+            foreach (List<SettingsModel> item in settings.SectionComponents)
+            {
+                foreach (SettingsModel setting in item)
+                {
+                    if (setting.Key == "Persona Input")
+                    {
+                        siteLevelSettings.PersonaInput = setting.Value;
+
+                    }
+                    if (setting.Key == "GlobalTheme")
+                    {
+                        siteLevelSettings.GlobalTheme = setting.Value;
+
+                    }
+                    else if (setting.Key == "SiteTheme")
+                    {
+                        siteLevelSettings.SiteTheme = setting.Value;
+
+                    }
+                    else if (setting.Key == "User Input")
+                    {
+                        siteLevelSettings.UserInput = setting.Value;
+
+                    }
+                    else if (setting.Key == "Seasonal Input")
+                    {
+                        siteLevelSettings.SeasonalInput = setting.Value;
+
+                    }
+                    else if (setting.Key == "System Input")
+                    {
+                        siteLevelSettings.SystemInput = setting.Value;
+
+                    }
+                }
+
+            }
+
+            if (_cacheService.TryGetValue(cacheKey, out SiteLevelSettings cachedSiteLevelSettings) && cachedSiteLevelSettings != null)
             {
                 return cachedSiteLevelSettings;
             }
@@ -319,7 +366,7 @@ namespace SemanticKernalApplication.Controllers
             }
             return siteLevelSettings;
         }
-       
+
         #endregion
 
     }
