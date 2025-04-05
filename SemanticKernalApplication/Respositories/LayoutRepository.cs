@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using System.Text.Json;
 using static SemanticKernalApplication.Core.Constants;
+using SemanticKernalApplication.Models;
 
 namespace SemanticKernalApplication.WebAPI.Respositories
 {
@@ -38,7 +39,7 @@ namespace SemanticKernalApplication.WebAPI.Respositories
             _cacheService = cacheService;
             _personalizationRepository = personalizationRepository;
             _options = options;
-           
+
         }
         #endregion
 
@@ -71,12 +72,12 @@ namespace SemanticKernalApplication.WebAPI.Respositories
                     }
                 }
                 #region token generation
-               
+
                 #endregion
                 var results = await CreateAndGetAllTaskResults(model, serialzedfilter);
-              
-              //  var contextItemHeading = results.sitecoreLayoutModel.FieldData?.ToObject<HeadingContentModel>();
-               // string title = !String.IsNullOrWhiteSpace(contextItemHeading?.Heading?.Value) ? contextItemHeading?.Heading?.Value : contextItemHeading?.Title?.Value;
+
+                //  var contextItemHeading = results.sitecoreLayoutModel.FieldData?.ToObject<HeadingContentModel>();
+                // string title = !String.IsNullOrWhiteSpace(contextItemHeading?.Heading?.Value) ? contextItemHeading?.Heading?.Value : contextItemHeading?.Title?.Value;
                 pageName = !String.IsNullOrWhiteSpace("") ? "" : String.Empty;
                 var mainPlaceholders = results.sitecoreLayoutModel?.PlaceholderData;
                 var mobileMainPlaceholders = results.sitecoreLayoutModel?.MobilePlaceholderData;
@@ -104,12 +105,57 @@ namespace SemanticKernalApplication.WebAPI.Respositories
                         case Constants.ScreenName.HomePageScreen:
                             await _baseScreenMapping.GetHomeScreenComponents(sitecoreComponents, response, model, results.sitecoreLayoutModel.FieldData, buildModelParameter);
                             break;
-                        
+
                     }
 
                 }
                 else
+                {
+                    if (model.ScreenName.ToLower() == ScreenName.SettingsPageScreen)
+                    {
+                        var themeFields = results.sitecoreLayoutModel.FieldData.ToArray().Where(x => (string)x["name"] == "SiteTheme" || (string)x["name"] == "GlobalTheme").ToList();
+
+                        List<SettingsModel> settings = new List<SettingsModel>();
+                        foreach (var item in themeFields)
+                        {
+                            SettingsModel settingsModel = new SettingsModel();
+                            settingsModel.Key = (string)item.SelectToken("name");
+                            settingsModel.Value = (string)item.SelectToken("jsonValue.value.src");
+
+                            settings.Add(settingsModel);
+                        }
+
+                        var textFields = results.sitecoreLayoutModel.FieldData.ToArray().Where(x => (string)x["name"] == "System Input" || (string)x["name"] == "User Input" || (string)x["name"] == "Seasonal Input").ToList();
+                        foreach (var item in textFields)
+                        {
+                            SettingsModel settingsModel = new SettingsModel();
+                            settingsModel.Key = (string)item.SelectToken("name");
+                            settingsModel.Value = (string)item.SelectToken("jsonValue.value");
+
+                            settings.Add(settingsModel);
+                        }
+
+                        response.SectionComponents.Add(settings);
+                    }
+                    if (model.ScreenName.ToLower() == ScreenName.SeasonsPageScreen)
+                    {
+                        List<SettingsModel> settings = new List<SettingsModel>();
+                        var textFields = results.sitecoreLayoutModel.FieldData.ToArray().Where(x => (string)x["name"] == "Start Date" || (string)x["name"] == "End Date" || (string)x["name"] == "Name" || (string)x["name"] == "Prompt Input").ToList();
+
+                        foreach (var item in textFields)
+                        {
+                            SettingsModel settingsModel = new SettingsModel();
+                            settingsModel.Key = (string)item.SelectToken("name");
+                            settingsModel.Value = (string)item.SelectToken("jsonValue.value");
+
+                            settings.Add(settingsModel);
+                        }
+
+                        response.SectionComponents.Add(settings);
+                    }
                     _logger.LogInformation($"======== LayoutRepository.GetPageComponents =======:screenName: {model?.ScreenName} id: {model?.Id} No Placeholder found for this page");
+                }
+
 
             }
             catch (Exception ex)
@@ -216,23 +262,23 @@ namespace SemanticKernalApplication.WebAPI.Respositories
             }
             SitecoreLayoutModel sitecoreLayoutModel = new SitecoreLayoutModel
             {
-               
+
             };
-           
+
             //Getting the layout cache details of sitecore layout/item query
             if (_cacheService.TryGetValue(cacheKey, out SitecoreLayoutModel cachedSitecoreLayoutModel)
                && cachedSitecoreLayoutModel?.PlaceholderData != null)
             {
                 isFromCache = true;
                 sitecoreLayoutModel = cachedSitecoreLayoutModel;
-               
+
             }
             else
             {
 
                 tasks.Add(_modelMapper.GetSitecoreLayoutComponents(model, false));
             }
-           
+
             try
             {
                 await Task.WhenAll(tasks);

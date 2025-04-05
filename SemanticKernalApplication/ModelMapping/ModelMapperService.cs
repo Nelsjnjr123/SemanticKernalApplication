@@ -67,7 +67,7 @@ namespace SemanticKernalApplication.WebAPI.ModelMapping
             {
                 graphQLQueryVariable = new GraphQLQueryVariable()
                 {
-                    sitename = "difcwebsite",
+                    sitename = model.sitename ?? SiteName,
                     language = model.Language
                 };
             }
@@ -88,8 +88,13 @@ namespace SemanticKernalApplication.WebAPI.ModelMapping
                 {
 
                     case ScreenName.SettingsPageScreen:
-                        graphQuery = Constants.GraphQlQueries.GetItem;
-                        itemPath = SETTINGS_PATH;
+                        graphQuery = Constants.GraphQlQueries.GetSettingItem;
+                        itemPath = string.Format(SETTINGS_PATH, model.sitename ?? SiteName);
+                        break;
+
+                    case ScreenName.SeasonsPageScreen:
+                        graphQuery = Constants.GraphQlQueries.GetSeasonItem;
+                        itemPath = SEASON_PATH;
                         break;
                     case ScreenName.HomePageScreen:
                         // graphQuery = Constants.GraphQlQueries.GetItem;
@@ -127,7 +132,7 @@ namespace SemanticKernalApplication.WebAPI.ModelMapping
             }
             graphQLQueryVariable = new GraphQLQueryVariable()
             {
-                sitename = SiteName,
+                sitename = model.sitename ?? SiteName,
                 language = model.Language
             };
             graphQLQueryVariable.path = itemPath;
@@ -140,12 +145,33 @@ namespace SemanticKernalApplication.WebAPI.ModelMapping
             }
             sitecoreLayoutModel.PlaceholderData = mainPlaceholders;
 
+            JToken? fieldData;
             //Fetching context Items Fields
-            var fieldData = results?.SelectToken(Constants.HeadlessItemFieldXPath);
-            if (fieldData == null)   // Fallback Check
+            if (model.ScreenName.ToLower() == ScreenName.SettingsPageScreen)
             {
-                fieldData = results?.SelectToken(Constants.HeadlessLayoutFieldXPath);
+                fieldData = results?.SelectToken(Constants.HeadlessSettingItemFieldXPath);
+                if (fieldData == null)   // Fallback Check
+                {
+                    fieldData = results?.SelectToken(Constants.HeadlessSettingItemFieldXPath);
+                }
             }
+            else if (model.ScreenName.ToLower() == ScreenName.SeasonsPageScreen)
+            {
+                fieldData = results?.SelectToken(Constants.HeadlessSeasonFieldXPath);
+                if (fieldData == null)   // Fallback Check
+                {
+                    fieldData = results?.SelectToken(Constants.HeadlessSeasonFieldXPath);
+                }
+            }
+            else
+            {
+                fieldData = results?.SelectToken(Constants.HeadlessItemFieldXPath);
+                if (fieldData == null)   // Fallback Check
+                {
+                    fieldData = results?.SelectToken(Constants.HeadlessItemFieldXPath);
+                }
+            }
+           
             sitecoreLayoutModel.FieldData = fieldData;
             var templateId = results?.SelectToken(Constants.TemplateIdFieldXPath)?.ToObject<string>();
             sitecoreLayoutModel.TemplateId = templateId;

@@ -206,17 +206,20 @@
         public const string HeadlessLayoutMobilePlacholderXPath1 = $"layout.{HeadlessMobilePlacholderMobileXPath}";
         public const string HeadlessLayoutMobilePlacholderXPath = $"layout.{HeadlessMobilePlacholderMobileXPath}";
         public const string HeadlessItemFieldXPath = "item.rendered.sitecore.route.fields";
+        public const string HeadlessSettingItemFieldXPath = "item.fields";
+        public const string HeadlessSeasonFieldXPath = "item.children.results[0].fields";
         public const string HeadlessLayoutFieldXPath = $"layout.{HeadlessItemFieldXPath}";
         public const string TemplateIdFieldXPath = $"item.rendered.sitecore.route.templateId";
         public const string ItemPageUrlXPath = "item.rendered.sitecore.context.MetaDataInfo.canonicalUrl";
 
         public const string IHSiteName = "InnovationHub";
-        public const string SiteName = "ExperienceWebsite";
+        public const string SiteName = "mav-site-a";
 
         public static class ScreenName
         {
             // Note: This isn't used by mobile team directly but it's used to specify all the mobile app related settings at settings item's presentation details
             public const string SettingsPageScreen = "settings";
+            public const string SeasonsPageScreen = "seasons";
             public const string HomePageScreen = "home";
             public const string OnboardingPageScreen = "onboarding";
             public const string WhatsOnPageScreen = "whatson";
@@ -335,7 +338,9 @@
         #endregion
 
         #region Sitecore Lauout Item Path 
-        public const string SETTINGS_PATH = "/sitecore/content/SemanticKernalApplicationExperiences/SemanticKernalApplication/SemanticKernalApplicationWebsite/MobileHome/Settings";
+        //public const string SETTINGS_PATH = "/sitecore/content/SemanticKernalApplicationExperiences/SemanticKernalApplication/SemanticKernalApplicationWebsite/MobileHome/Settings";
+        public const string SETTINGS_PATH = "/sitecore/content/mobile-mavericks/{0}/Settings";
+        public const string SEASON_PATH = "/sitecore/content/mobile-mavericks/mav-shared/Seasons";
         public const string VISITOR_HOME_PATH = "/MobileHome";
         public const string GUEST_HOME_PATH = "/MobileHome/guesthome";
         public const string EMPLOYEE_HOME_PATH = "/MobileHome/employeehome";
@@ -730,6 +735,37 @@
                     item(language:$language,path:$path)
                     {
                         rendered
+                    }
+                 }
+            ";
+            public const string GetSettingItem = @"
+                query($language:String!,$path:String!)
+                {
+                    item(language:$language,path:$path)
+                    {                        
+                        id
+						name     
+              	        fields 
+                        {
+                            name
+                            jsonValue
+                        }                        
+                    }
+                 }
+            ";
+            public const string GetSeasonItem = @"
+                query($language:String!,$path:String!)
+                {
+                    item(path: $path, language: $language) 
+  		            {
+                        children {
+                        results {
+                        fields {
+                            name
+                            jsonValue             
+                        }           
+                        }
+                        }
                     }
                  }
             ";

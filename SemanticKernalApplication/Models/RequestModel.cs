@@ -118,6 +118,7 @@ namespace SemanticKernalApplication.WebAPI.Models
         public bool IsFutureCardsRequired { get; set; } = false;
         public string State { get; set; }
         public bool IsLocationBased { get; set; }
+        public string sitename { get; set; }
 
     }
     public class FilterOptions
